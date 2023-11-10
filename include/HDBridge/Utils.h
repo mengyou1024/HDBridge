@@ -22,7 +22,7 @@ namespace sqlite_orm {
         int bind(sqlite3_stmt* stmt, int index, const HD_ScanORM& value) {
             std::vector<char> blobValue = {};
             for (auto i = 0; i < HDBridge::CHANNEL_NUMBER; i++) {
-                auto temp = value.mScanData[i];
+                std::shared_ptr<HDBridge::NM_DATA> temp = value.mScanData[i];
                 if (temp == nullptr) {
                     temp           = std::make_shared<HDBridge::NM_DATA>();
                     temp->iChannel = i;
@@ -122,7 +122,7 @@ public:
 
     template <class T>
     T getBridge() const {
-        static_assert(std::is_pointer_v<T> && std::is_base_of_v<std::remove_pointer_t<T>, HDBridge>);
+        static_assert(std::is_pointer_v<T> && std::is_base_of_v<HDBridge,std::remove_pointer_t<T>>);
         return dynamic_cast<T>(mBridge.get());
     }
 

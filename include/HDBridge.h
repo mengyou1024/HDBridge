@@ -83,6 +83,7 @@ public:
         HB_GateInfo  gate2Info[CHANNEL_NUMBER]    = {};       ///< 波门2信息
         HB_Gate2Type gate2Type[CHANNEL_NUMBER]    = {};       ///< 波门2类型
         float        soundVelocity                = {5920.f}; ///< 声速
+        float        zeroBias                     = {0};      ///< 零点偏移
     };
 
 #pragma pack()
@@ -108,8 +109,16 @@ public:
         mCache.soundVelocity = velocity;
         return true;
     }
-    virtual float getSoundVelocity() const final {
+    virtual const float getSoundVelocity() const final {
         return mCache.soundVelocity;
+    }
+
+    virtual bool setZeroBias(float zero_us) final {
+        mCache.zeroBias = zero_us;
+        return true;
+    }
+    virtual const float getZeroBias() const final {
+        return mCache.zeroBias;
     }
 
     virtual bool      setFrequency(int freq) = 0;
@@ -235,8 +244,9 @@ public:
         setEncoderPulse(1);
         for (int i = 0; i < CHANNEL_NUMBER; ++i) {
             setPulseWidth(i, 210.f);
-            setDelay(i, .0f);
-            setSampleDepth(i, 67.45f);
+            setZeroBias(distance2time(0.0));
+            setDelay(i, static_cast<float>(distance2time(0.0)));
+            setSampleDepth(i, static_cast<float>(distance2time(200.0)));
             setSampleFactor(i, 13);
             setGain(i, 30.f);
             setFilter(i, static_cast<HB_Filter>(3));
@@ -270,7 +280,11 @@ public:
      * @return
      */
     static constexpr double distance2time(double distance_mm, double velocity_in_m_per_s) {
-        return distance_mm * 2000.0 / velocity_in_m_per_s;
+        if (velocity_in_m_per_s == 0.0) {
+            return 0;
+        } else {
+            return distance_mm * 2000.0 / velocity_in_m_per_s;
+        }
     }
 
     virtual double time2distance(double time_us) final {
