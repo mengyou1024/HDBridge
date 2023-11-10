@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-
-add_definitions(-DUSE_SQLITE_ORM)
-
+message(STATUS subdirectory: HDBridge)
 project(HDBridge)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -29,7 +27,8 @@ message(STATUS UTILS_SRC_LIST${UTILS_SRC_LIST})
 add_library(HDBridge_Utils STATIC ${UTILS_SRC_LIST})
 
 if (CMAKE_USE_SQLITE_ORM)
-    target_link_libraries(HDBridge_Utils PUBLIC SQLite3::SQLite3)
+    message(STATUS HDBridge_Utils: use sqlite orm)
+    target_link_libraries(HDBridge_Utils PUBLIC ORM::SQLite3)
 endif()
 
 target_include_directories(HDBridge_Utils PUBLIC "include" boards/TOFDPort/include)

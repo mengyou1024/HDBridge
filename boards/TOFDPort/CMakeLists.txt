@@ -15,7 +15,8 @@ target_include_directories(TOFDPort PUBLIC "include" ${HDBridge_INCLUDE})
 target_link_libraries(TOFDPort PUBLIC _TOFDPort)
 
 if (CMAKE_USE_SQLITE_ORM)
-    target_link_libraries(TOFDPort PUBLIC SQLite3::SQLite3)
+    message(STATUS TOFDPort: use sqlite orm)
+    target_link_libraries(TOFDPort PUBLIC ORM::SQLite3)
 endif()
 
 

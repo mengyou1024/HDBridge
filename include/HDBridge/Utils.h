@@ -7,6 +7,7 @@
 #include <mutex>
 #include <set>
 #include <thread>
+#include <type_traits>
 
 #ifdef USE_SQLITE_ORM
     #include <sqlite_orm/sqlite_orm.h>
@@ -83,15 +84,13 @@ public:
 
     HD_ScanORM mScanOrm = {};
 
-    explicit HD_Utils(HDBridge* bridge)
-        : mBridge(bridge) {
+    [[deprecated("use `HD_Utils(std::unique_ptr<HDBridge> bridge)` insetead")]] explicit HD_Utils(HDBridge* bridge)
+        : HD_Utils(std::unique_ptr<HDBridge>(bridge)) {}
+
+    explicit HD_Utils(std::unique_ptr<HDBridge> bridge)
+        : mBridge(std::move(bridge)) {
         if (mBridge) {
-            bridge->open();
-            if (!bridge->isOpen()) {
-                std::cout << "HDBridge not open" << std::endl;
-            } else {
-                std::cout << "HDBridge open" << std::endl;
-            }
+            mBridge->open();
         }
     }
 
@@ -112,12 +111,23 @@ public:
         if (mBridge) {
             mBridge->close();
         }
+        waitExit();
     }
 
     std::thread::id start();
 
     void setBridge(HDBridge* bridge) {
-        mBridge = bridge;
+        mBridge = std::unique_ptr<HDBridge>(bridge);
+    }
+
+    template <class T>
+    T getBridge() const {
+        static_assert(std::is_pointer_v(T) && std::is_base_of_v(std::remove_pointer(T), HDBridge));
+        return dynamic_cast<T>(mBridge.get());
+    }
+
+    HDBridge* getBridge() const {
+        return mBridge.get();
     }
 
     void stop();
@@ -143,10 +153,10 @@ public:
 #endif
 
 private:
-    std::mutex mScanDataMutex     = {};
-    std::mutex mReadCallbackMutex = {};
-    bool       mReadThreadExit    = false;
-    HDBridge*  mBridge            = nullptr;
+    std::mutex                mScanDataMutex     = {};
+    std::mutex                mReadCallbackMutex = {};
+    bool                      mReadThreadExit    = false;
+    std::unique_ptr<HDBridge> mBridge            = nullptr;
 
     std::vector<std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)>> mReadCallback = {};
 

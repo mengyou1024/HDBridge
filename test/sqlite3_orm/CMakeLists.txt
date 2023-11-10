@@ -15,6 +15,6 @@ endif()
 
 target_include_directories(sqlite3 INTERFACE "include")
 
-add_library(SQLite3::SQLite3 ALIAS sqlite3)
+add_library(ORM::SQLite3 ALIAS sqlite3)
 
 set(CMAKE_USE_SQLITE_ORM TRUE CACHE BOOL "Use SQLite3 ORM")

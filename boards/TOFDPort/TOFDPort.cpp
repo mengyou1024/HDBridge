@@ -8,16 +8,19 @@
 #else
 namespace spdlog {
     template <class... T>
-    void debug(T... Args) {
-        std::cout << "[debug]" << Args... << std::endl;
+    void debug(T &&...Args) {
+        std::cout << "[debug]";
+        (std::cout << ... << Args) << std::endl;
     }
     template <class... T>
-    void info(T... Args) {
-        std::cout << "[info]" << Args... << std::endl;
+    void info(T &&...Args) {
+        std::cout << "[info]";
+        (std::cout << ... << Args) << std::endl;
     }
     template <class... T>
     void warn(T... Args) {
-        std::cout << "[warn]" << Args... << std::endl;
+        std::cout << "[warn]";
+        (std::cout << ... << Args) << std::endl;
     }
 } // namespace spdlog
 #endif
@@ -64,7 +67,7 @@ bool TOFDUSBPort::setVoltage(HB_Voltage voltage) {
 
 bool TOFDUSBPort::setChannelFlag(uint32_t flag) {
     if (flag == 0) {
-        flag = 0xFFFFFF;
+        flag = 0xFFF0FFF;
     }
     if (TOFD_PORT_SetChannelFlag(static_cast<int>(flag))) {
         this->mCache.channelFlag = flag;
@@ -204,7 +207,13 @@ bool TOFDUSBPort::setGateInfo(int channel, const HB_GateInfo &info) {
         return false;
     }
     if (TOFD_PORT_SetGateInfo(channel, info.gate, info.active, info.alarmType, info.pos, info.width, info.height)) {
-        this->mCache.gateInfo[channel] = info;
+        HB_GateInfo cp = info;
+        // cp.active    = 1;
+        if (info.gate == 0) {
+            this->mCache.gateInfo[channel] = cp;
+        } else {
+            this->mCache.gate2Info[channel] = cp;
+        }
         return true;
     }
     return false;
@@ -239,7 +248,8 @@ unique_ptr<HDBridge::NM_DATA> TOFDUSBPort::readDatas() {
     ret->iChannel   = data->iChannel;
     ret->iPackage   = data->iPackage;
     ret->iAScanSize = data->iAScanSize;
-    ret->pAscan     = vector<uint8_t>(data->pAscan, data->pAscan + ret->iAScanSize);
+    ret->pAscan.resize(data->iAScanSize);
+    memcpy(ret->pAscan.data(), data->pAscan, ret->iAScanSize);
     memcpy(ret->pCoder, data->pCoder, sizeof(int32_t) * 2);
     memcpy(ret->pGatePos, data->pGatePos, sizeof(int32_t) * 2);
     memcpy(ret->pGateAmp, data->pGateAmp, sizeof(uint8_t) * 2);

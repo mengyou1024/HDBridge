@@ -64,23 +64,25 @@ public:
 #pragma pack(1)
     struct cache_t {
         // cache
-        int          frequency                    = {}; ///< 重复频率
-        HB_Voltage   voltage                      = {}; ///< 发射电压
-        uint32_t     channelFlag                  = {}; ///< 通道标志
-        int          scanIncrement                = {}; ///< 扫查增量
-        int          ledStatus                    = {}; ///< LED状态
-        int          damperFlag                   = {}; ///< 阻尼标志
-        int          encoderPulse                 = {}; ///< 编码器脉冲
-        float        pulseWidth[CHANNEL_NUMBER]   = {}; ///< 脉冲宽度
-        float        delay[CHANNEL_NUMBER]        = {}; ///< 延时
-        float        sampleDepth[CHANNEL_NUMBER]  = {}; ///< 采样深度
-        int          sampleFactor[CHANNEL_NUMBER] = {}; ///< 采样因子
-        float        gain[CHANNEL_NUMBER]         = {}; ///< 增益
-        HB_Filter    filter[CHANNEL_NUMBER]       = {}; ///< 滤波
-        HB_Demodu    demodu[CHANNEL_NUMBER]       = {}; ///< 检波方式
-        int          phaseReverse[CHANNEL_NUMBER] = {}; ///< 相位翻转
-        HB_GateInfo  gateInfo[CHANNEL_NUMBER]     = {}; ///< 波门信息
-        HB_Gate2Type gate2Type[CHANNEL_NUMBER]    = {}; ///< 波门2类型
+        int          frequency                    = {};       ///< 重复频率
+        HB_Voltage   voltage                      = {};       ///< 发射电压
+        uint32_t     channelFlag                  = {};       ///< 通道标志
+        int          scanIncrement                = {};       ///< 扫查增量
+        int          ledStatus                    = {};       ///< LED状态
+        int          damperFlag                   = {};       ///< 阻尼标志
+        int          encoderPulse                 = {};       ///< 编码器脉冲
+        float        pulseWidth[CHANNEL_NUMBER]   = {};       ///< 脉冲宽度
+        float        delay[CHANNEL_NUMBER]        = {};       ///< 延时
+        float        sampleDepth[CHANNEL_NUMBER]  = {};       ///< 采样深度
+        int          sampleFactor[CHANNEL_NUMBER] = {};       ///< 采样因子
+        float        gain[CHANNEL_NUMBER]         = {};       ///< 增益
+        HB_Filter    filter[CHANNEL_NUMBER]       = {};       ///< 滤波
+        HB_Demodu    demodu[CHANNEL_NUMBER]       = {};       ///< 检波方式
+        int          phaseReverse[CHANNEL_NUMBER] = {};       ///< 相位翻转
+        HB_GateInfo  gateInfo[CHANNEL_NUMBER]     = {};       ///< 波门信息
+        HB_GateInfo  gate2Info[CHANNEL_NUMBER]    = {};       ///< 波门2信息
+        HB_Gate2Type gate2Type[CHANNEL_NUMBER]    = {};       ///< 波门2类型
+        float        soundVelocity                = {5920.f}; ///< 声速
     };
 
 #pragma pack()
@@ -89,7 +91,11 @@ public:
     cache_t mCache = {};
 
 public:
-    HDBridge() {}
+    HDBridge() {
+        for (auto &g : mCache.gate2Info) {
+            g.gate = 1;
+        }
+    }
 
     virtual ~HDBridge() = default;
 
@@ -97,6 +103,14 @@ public:
     virtual bool isOpen()        = 0;
     virtual bool close()         = 0;
     virtual bool isDeviceExist() = 0;
+
+    virtual bool setSoundVelocity(float velocity) final {
+        mCache.soundVelocity = velocity;
+        return true;
+    }
+    virtual float getSoundVelocity() const final {
+        return mCache.soundVelocity;
+    }
 
     virtual bool      setFrequency(int freq) = 0;
     virtual const int getFrequency() const final {
@@ -167,8 +181,12 @@ public:
         return vector<int>(mCache.phaseReverse, mCache.phaseReverse + CHANNEL_NUMBER);
     }
     virtual bool                      setGateInfo(int channel, const HB_GateInfo &info) = 0;
-    virtual const vector<HB_GateInfo> getGateInfo() const final {
-        return vector<HB_GateInfo>(mCache.gateInfo, mCache.gateInfo + CHANNEL_NUMBER);
+    virtual const vector<HB_GateInfo> getGateInfo(int index) const final {
+        if (index == 0) {
+            return vector<HB_GateInfo>(mCache.gateInfo, mCache.gateInfo + CHANNEL_NUMBER);
+        } else {
+            return vector<HB_GateInfo>(mCache.gate2Info, mCache.gate2Info + CHANNEL_NUMBER);
+        }
     }
     virtual bool                       setGate2Type(int channel, HB_Gate2Type type) = 0;
     virtual const vector<HB_Gate2Type> getGate2Type() const final {
@@ -205,5 +223,61 @@ public:
             setGate2Type(i, mCache.gate2Type[i]);
         }
         flushSetting();
+    }
+
+    virtual void defaultInit() final {
+        setFrequency(1200);
+        setVoltage(HB_Voltage::Voltage_100V);
+        setChannelFlag(0xFFF0FFF);
+        setScanIncrement(0);
+        setLED(0);
+        setDamperFlag(0xFFF);
+        setEncoderPulse(1);
+        for (int i = 0; i < CHANNEL_NUMBER; ++i) {
+            setPulseWidth(i, 210.f);
+            setDelay(i, .0f);
+            setSampleDepth(i, 67.45f);
+            setSampleFactor(i, 13);
+            setGain(i, 30.f);
+            setFilter(i, static_cast<HB_Filter>(3));
+            setDemodu(i, HB_Demodu::Demodu_Full);
+            setPhaseReverse(i, 0);
+            HB_GateInfo info = {
+                0, 1, 0, 0.2f, 0.2f, 0.5f};
+            setGateInfo(i, mCache.gateInfo[i]);
+            info.gate   = 1;
+            info.active = 1;
+            setGateInfo(i, mCache.gateInfo[i]);
+            setGate2Type(i, mCache.gate2Type[i]);
+        }
+        flushSetting();
+    }
+
+    /**
+     * @brief 时间转距离
+     * @param time_us 微秒时间
+     * @param velocity_in_m_per_s 声速(m/s)
+     * @return 距离 (mm)
+     */
+    static constexpr double time2distance(double time_us, double velocity_in_m_per_s) {
+        return time_us * velocity_in_m_per_s / 2000.0;
+    }
+
+    /**
+     * @brief 距离转时间
+     * @param distance_mm
+     * @param velocity_in_m_per_s
+     * @return
+     */
+    static constexpr double distance2time(double distance_mm, double velocity_in_m_per_s) {
+        return distance_mm * 2000.0 / velocity_in_m_per_s;
+    }
+
+    virtual double time2distance(double time_us) final {
+        return time2distance(time_us, (double)mCache.soundVelocity);
+    }
+
+    virtual double distance2time(double distance_mm) final {
+        return distance2time(distance_mm, (double)mCache.soundVelocity);
     }
 };

@@ -104,7 +104,7 @@ public:
     static auto storage() {
         using namespace sqlite_orm;
         return make_storage(std::string(ORM_DB_NAME),
-                            make_table("SystemConfig",
+                            make_table("TOFDUSBPort",
                                        make_column("ID", &TOFDUSBPort::id, primary_key()),
                                        make_column("NAME", &TOFDUSBPort::name, unique()),
                                        make_column("CACHE", &TOFDUSBPort::mCache)));

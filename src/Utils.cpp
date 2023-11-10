@@ -1,4 +1,5 @@
 #include "HDBridge/Utils.h"
+#include <chrono>
 
 std::thread::id HD_Utils::start() {
     mReadThreadExit = false;
@@ -45,6 +46,8 @@ void HD_Utils::readThread() {
             if (data->iChannel < HDBridge::CHANNEL_NUMBER) {
                 mScanOrm.mScanData[data->iChannel] = std::move(data);
             }
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 }
