@@ -122,7 +122,7 @@ public:
 
     template <class T>
     T getBridge() const {
-        static_assert(std::is_pointer_v(T) && std::is_base_of_v(std::remove_pointer(T), HDBridge));
+        static_assert(std::is_pointer_v<T> && std::is_base_of_v<std::remove_pointer_t<T>, HDBridge>);
         return dynamic_cast<T>(mBridge.get());
     }
 
