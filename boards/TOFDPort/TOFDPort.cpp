@@ -126,7 +126,7 @@ bool TOFDUSBPort::setDelay(int channel, float delay_us) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
-    if (TOFD_PORT_SetDelay(channel, delay_us + mCache.zeroBias)) {
+    if (TOFD_PORT_SetDelay(channel, delay_us + mCache.zeroBias[channel])) {
         this->mCache.delay[channel] = delay_us;
         return true;
     }
@@ -151,7 +151,7 @@ bool TOFDUSBPort::setSampleDepth(int channel, float sampleDepth) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
-    if (TOFD_PORT_SetSampleDepth(channel, sampleDepth + mCache.zeroBias)) {
+    if (TOFD_PORT_SetSampleDepth(channel, sampleDepth + mCache.zeroBias[channel])) {
         this->mCache.sampleDepth[channel] = sampleDepth;
         return true;
     }
@@ -207,11 +207,10 @@ bool TOFDUSBPort::setGateInfo(int channel, const HB_GateInfo &info) {
         return false;
     }
     if (TOFD_PORT_SetGateInfo(channel, info.gate, info.active, info.alarmType, info.pos, info.width, info.height)) {
-        HB_GateInfo cp = info;
         if (info.gate == 0) {
-            this->mCache.gateInfo[channel] = cp;
+            this->mCache.gateInfo[channel] = info;
         } else {
-            this->mCache.gate2Info[channel] = cp;
+            this->mCache.gate2Info[channel] = info;
         }
         return true;
     }

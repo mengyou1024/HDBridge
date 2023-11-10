@@ -9,10 +9,11 @@ using std::make_unique;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
+
 class HDBridge {
 public:
     enum class HB_Voltage : uint32_t {
-        Voltage_50 = 0,
+        Voltage_50V = 0,
         Voltage_100V,
         Voltage_200V,
         Voltage_260V,
@@ -64,28 +65,27 @@ public:
 #pragma pack(1)
     struct cache_t {
         // cache
-        int          frequency                    = {};       ///< 重复频率
-        HB_Voltage   voltage                      = {};       ///< 发射电压
-        uint32_t     channelFlag                  = {};       ///< 通道标志
-        int          scanIncrement                = {};       ///< 扫查增量
-        int          ledStatus                    = {};       ///< LED状态
-        int          damperFlag                   = {};       ///< 阻尼标志
-        int          encoderPulse                 = {};       ///< 编码器脉冲
-        float        pulseWidth[CHANNEL_NUMBER]   = {};       ///< 脉冲宽度
-        float        delay[CHANNEL_NUMBER]        = {};       ///< 延时
-        float        sampleDepth[CHANNEL_NUMBER]  = {};       ///< 采样深度
-        int          sampleFactor[CHANNEL_NUMBER] = {};       ///< 采样因子
-        float        gain[CHANNEL_NUMBER]         = {};       ///< 增益
-        HB_Filter    filter[CHANNEL_NUMBER]       = {};       ///< 滤波
-        HB_Demodu    demodu[CHANNEL_NUMBER]       = {};       ///< 检波方式
-        int          phaseReverse[CHANNEL_NUMBER] = {};       ///< 相位翻转
-        HB_GateInfo  gateInfo[CHANNEL_NUMBER]     = {};       ///< 波门信息
-        HB_GateInfo  gate2Info[CHANNEL_NUMBER]    = {};       ///< 波门2信息
-        HB_Gate2Type gate2Type[CHANNEL_NUMBER]    = {};       ///< 波门2类型
-        float        soundVelocity                = {5920.f}; ///< 声速
-        float        zeroBias                     = {0};      ///< 零点偏移
+        float        soundVelocity                = {}; ///< 声速
+        int          frequency                    = {}; ///< 重复频率
+        HB_Voltage   voltage                      = {}; ///< 发射电压
+        uint32_t     channelFlag                  = {}; ///< 通道标志
+        int          scanIncrement                = {}; ///< 扫查增量
+        int          ledStatus                    = {}; ///< LED状态
+        int          damperFlag                   = {}; ///< 阻尼标志
+        int          encoderPulse                 = {}; ///< 编码器脉冲
+        float        zeroBias[CHANNEL_NUMBER]     = {}; ///< 零点偏移
+        float        pulseWidth[CHANNEL_NUMBER]   = {}; ///< 脉冲宽度
+        float        delay[CHANNEL_NUMBER]        = {}; ///< 延时
+        float        sampleDepth[CHANNEL_NUMBER]  = {}; ///< 采样深度
+        int          sampleFactor[CHANNEL_NUMBER] = {}; ///< 采样因子
+        float        gain[CHANNEL_NUMBER]         = {}; ///< 增益
+        HB_Filter    filter[CHANNEL_NUMBER]       = {}; ///< 滤波
+        HB_Demodu    demodu[CHANNEL_NUMBER]       = {}; ///< 检波方式
+        int          phaseReverse[CHANNEL_NUMBER] = {}; ///< 相位翻转
+        HB_GateInfo  gateInfo[CHANNEL_NUMBER]     = {}; ///< 波门信息
+        HB_GateInfo  gate2Info[CHANNEL_NUMBER]    = {}; ///< 波门2信息
+        HB_Gate2Type gate2Type[CHANNEL_NUMBER]    = {}; ///< 波门2类型
     };
-
 #pragma pack()
 
 public:
@@ -96,6 +96,7 @@ public:
         for (auto &g : mCache.gate2Info) {
             g.gate = 1;
         }
+        mCache.soundVelocity = 5920.0f;
     }
 
     virtual ~HDBridge() = default;
@@ -111,14 +112,6 @@ public:
     }
     virtual const float getSoundVelocity() const final {
         return mCache.soundVelocity;
-    }
-
-    virtual bool setZeroBias(float zero_us) final {
-        mCache.zeroBias = zero_us;
-        return true;
-    }
-    virtual const float getZeroBias() const final {
-        return mCache.zeroBias;
     }
 
     virtual bool      setFrequency(int freq) = 0;
@@ -154,6 +147,14 @@ public:
     virtual bool      setEncoderPulse(int encoderPulse) = 0;
     virtual const int getEncoderPulse() const final {
         return mCache.encoderPulse;
+    }
+
+    virtual bool setZeroBias(int channel, float zero_us) final {
+        mCache.zeroBias[channel] = zero_us;
+        return true;
+    }
+    virtual const float getZeroBias(int channel) const final {
+        return mCache.zeroBias[channel];
     }
 
     virtual bool                setPulseWidth(int channel, float pulseWidth) = 0;
@@ -212,6 +213,7 @@ public:
     virtual unique_ptr<NM_DATA> readDatas() = 0;
 
     virtual void syncCache2Board() final {
+        setSoundVelocity(mCache.soundVelocity);
         setFrequency(mCache.frequency);
         setVoltage(mCache.voltage);
         setChannelFlag(mCache.channelFlag);
@@ -220,6 +222,7 @@ public:
         setDamperFlag(mCache.damperFlag);
         setEncoderPulse(mCache.encoderPulse);
         for (int i = 0; i < CHANNEL_NUMBER; ++i) {
+            setZeroBias(i, mCache.zeroBias[i]);
             setPulseWidth(i, mCache.pulseWidth[i]);
             setDelay(i, mCache.delay[i]);
             setSampleDepth(i, mCache.sampleDepth[i]);
@@ -229,6 +232,7 @@ public:
             setDemodu(i, mCache.demodu[i]);
             setPhaseReverse(i, mCache.phaseReverse[i]);
             setGateInfo(i, mCache.gateInfo[i]);
+            setGateInfo(i, mCache.gate2Info[i]);
             setGate2Type(i, mCache.gate2Type[i]);
         }
         flushSetting();
@@ -244,7 +248,7 @@ public:
         setEncoderPulse(1);
         for (int i = 0; i < CHANNEL_NUMBER; ++i) {
             setPulseWidth(i, 210.f);
-            setZeroBias(distance2time(0.0));
+            setZeroBias(i, static_cast<float>(distance2time(0.0)));
             setDelay(i, static_cast<float>(distance2time(0.0)));
             setSampleDepth(i, static_cast<float>(distance2time(200.0)));
             setSampleFactor(i, 13);
@@ -293,5 +297,43 @@ public:
 
     virtual double distance2time(double distance_mm) final {
         return distance2time(distance_mm, (double)mCache.soundVelocity);
+    }
+
+    /*
+     * @brief 通道参数复制参数
+     * @param src 复制源
+     * @param dist 复制目标列表
+     */
+    virtual void paramCopy(size_t src, std::vector<size_t> dist) {
+        if (src >= static_cast<size_t>(CHANNEL_NUMBER)) {
+            return;
+        }
+        auto zeroBias     = mCache.zeroBias[src];
+        auto pluseWidth   = mCache.pulseWidth[src];
+        auto delay        = mCache.delay[src];
+        auto sampleDepth  = mCache.sampleDepth[src];
+        auto sampleFactor = mCache.sampleFactor[src];
+        auto gain         = mCache.gain[src];
+        auto filter       = mCache.filter[src];
+        auto demodu       = mCache.demodu[src];
+        auto phaseReverse = mCache.phaseReverse[src];
+        auto gateInfo     = mCache.gateInfo[src];
+        auto gate2Info    = mCache.gate2Info[src];
+        auto gate2Type    = mCache.gate2Type[src];
+        for (auto i : dist) {
+            mCache.zeroBias[i]     = zeroBias;
+            mCache.pulseWidth[i]   = pluseWidth;
+            mCache.delay[i]        = delay;
+            mCache.sampleDepth[i]  = sampleDepth;
+            mCache.sampleFactor[i] = sampleFactor;
+            mCache.gain[i]         = gain;
+            mCache.filter[i]       = filter;
+            mCache.demodu[i]       = demodu;
+            mCache.phaseReverse[i] = phaseReverse;
+            mCache.gateInfo[i]     = gateInfo;
+            mCache.gate2Info[i]    = gate2Info;
+            mCache.gate2Type[i]    = gate2Type;
+        }
+        syncCache2Board();
     }
 };

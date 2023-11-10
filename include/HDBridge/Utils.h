@@ -6,6 +6,7 @@
 #include <iostream>
 #include <mutex>
 #include <set>
+#include <stack>
 #include <thread>
 #include <type_traits>
 
@@ -122,7 +123,7 @@ public:
 
     template <class T>
     T getBridge() const {
-        static_assert(std::is_pointer_v<T> && std::is_base_of_v<HDBridge,std::remove_pointer_t<T>>);
+        static_assert(std::is_pointer_v<T> && std::is_base_of_v<HDBridge, std::remove_pointer_t<T>>);
         return dynamic_cast<T>(mBridge.get());
     }
 
@@ -135,6 +136,17 @@ public:
 
     void addReadCallback(const std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)> callback);
     void removeReadCallback();
+
+    /**
+     * @brief 将回调函数列表压入栈,
+     * @note 此操作在压入栈后, 会调用`removeReadCallback`删除所有的回调函数
+     */
+    void pushCallback();
+
+    /**
+     * @brief 从栈中恢复回调函数列表
+     */
+    void popCallback();
 
 #ifdef USE_SQLITE_ORM
 
@@ -153,12 +165,17 @@ public:
 #endif
 
 private:
+    using HDUtilsCallback       = std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)>;
+    using HDUtilsCallbackVector = std::vector<HDUtilsCallback>;
+    using HDUtilsCallbackStack  = std::stack<HDUtilsCallbackVector>;
+
     std::mutex                mScanDataMutex     = {};
     std::mutex                mReadCallbackMutex = {};
     bool                      mReadThreadExit    = false;
     std::unique_ptr<HDBridge> mBridge            = nullptr;
 
-    std::vector<std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)>> mReadCallback = {};
+    HDUtilsCallbackVector mReadCallback  = {};
+    HDUtilsCallbackStack  mCallbackStack = {};
 
     std::thread mReadThread;
 

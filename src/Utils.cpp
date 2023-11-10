@@ -30,6 +30,19 @@ void HD_Utils::removeReadCallback() {
     mReadCallback.clear();
 }
 
+void HD_Utils::pushCallback() {
+    mCallbackStack.push(mReadCallback);
+    removeReadCallback();
+}
+
+void HD_Utils::popCallback() {
+    if (mCallbackStack.size() > 0) {
+        std::lock_guard<std::mutex> lock(mReadCallbackMutex);
+        mReadCallback = mCallbackStack.top();
+        mCallbackStack.pop();
+    }
+}
+
 void HD_Utils::readThread() {
     while (mReadThreadExit == false) {
         if (!mBridge) {
@@ -39,6 +52,9 @@ void HD_Utils::readThread() {
         auto data = mBridge->readDatas();
         if (data) {
             std::lock_guard<std::mutex> readLock(mReadCallbackMutex);
+            if (mReadCallback.size() == 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
             for (auto& callback : mReadCallback) {
                 callback(*data.get(), *this);
             }
