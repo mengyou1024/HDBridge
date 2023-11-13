@@ -43,6 +43,11 @@ bool TOFDUSBPort::isDeviceExist() {
     return TOFD_PORT_IsDeviceExist();
 }
 
+bool TOFDUSBPort::setSoundVelocity(float velocity) {
+    mCache.soundVelocity = velocity;
+    return true;
+}
+
 bool TOFDUSBPort::setFrequency(int freq) {
     if (freq < 50) {
         freq = 50;
@@ -103,6 +108,17 @@ bool TOFDUSBPort::setDamperFlag(int damperFlag) {
 bool TOFDUSBPort::setEncoderPulse(int encoderPulse) {
     if (TOFD_PORT_SetEncoderPulse(encoderPulse)) {
         this->mCache.encoderPulse = encoderPulse;
+        return true;
+    }
+    return false;
+}
+
+bool TOFDUSBPort::setZeroBias(int channel, float zero_us) {
+    if (channel >= CHANNEL_NUMBER) {
+        return false;
+    }
+    if (TOFD_PORT_SetDelay(channel, zero_us + mCache.delay[channel])) {
+        mCache.zeroBias[channel] = zero_us;
         return true;
     }
     return false;

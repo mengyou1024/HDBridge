@@ -106,10 +106,7 @@ public:
     virtual bool close()         = 0;
     virtual bool isDeviceExist() = 0;
 
-    virtual bool setSoundVelocity(float velocity) final {
-        mCache.soundVelocity = velocity;
-        return true;
-    }
+    virtual bool        setSoundVelocity(float velocity) = 0;
     virtual const float getSoundVelocity() const final {
         return mCache.soundVelocity;
     }
@@ -125,7 +122,7 @@ public:
     }
 
     virtual bool       setChannelFlag(uint32_t flag) = 0;
-    virtual const bool getChannelFlag() const final {
+    virtual const uint32_t getChannelFlag() const final {
         return mCache.channelFlag;
     }
 
@@ -149,10 +146,7 @@ public:
         return mCache.encoderPulse;
     }
 
-    virtual bool setZeroBias(int channel, float zero_us) final {
-        mCache.zeroBias[channel] = zero_us;
-        return true;
-    }
+    virtual bool        setZeroBias(int channel, float zero_us) = 0;
     virtual const float getZeroBias(int channel) const final {
         return mCache.zeroBias[channel];
     }
