@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <array>
 
 using std::make_shared;
 using std::make_unique;
@@ -65,26 +66,26 @@ public:
 #pragma pack(1)
     struct cache_t {
         // cache
-        float        soundVelocity                = {}; ///< 声速
-        int          frequency                    = {}; ///< 重复频率
-        HB_Voltage   voltage                      = {}; ///< 发射电压
-        uint32_t     channelFlag                  = {}; ///< 通道标志
-        int          scanIncrement                = {}; ///< 扫查增量
-        int          ledStatus                    = {}; ///< LED状态
-        int          damperFlag                   = {}; ///< 阻尼标志
-        int          encoderPulse                 = {}; ///< 编码器脉冲
-        float        zeroBias[CHANNEL_NUMBER]     = {}; ///< 零点偏移
-        float        pulseWidth[CHANNEL_NUMBER]   = {}; ///< 脉冲宽度
-        float        delay[CHANNEL_NUMBER]        = {}; ///< 延时
-        float        sampleDepth[CHANNEL_NUMBER]  = {}; ///< 采样深度
-        int          sampleFactor[CHANNEL_NUMBER] = {}; ///< 采样因子
-        float        gain[CHANNEL_NUMBER]         = {}; ///< 增益
-        HB_Filter    filter[CHANNEL_NUMBER]       = {}; ///< 滤波
-        HB_Demodu    demodu[CHANNEL_NUMBER]       = {}; ///< 检波方式
-        int          phaseReverse[CHANNEL_NUMBER] = {}; ///< 相位翻转
-        HB_GateInfo  gateInfo[CHANNEL_NUMBER]     = {}; ///< 波门信息
-        HB_GateInfo  gate2Info[CHANNEL_NUMBER]    = {}; ///< 波门2信息
-        HB_Gate2Type gate2Type[CHANNEL_NUMBER]    = {}; ///< 波门2类型
+        float                                    soundVelocity = {}; ///< 声速
+        int                                      frequency     = {}; ///< 重复频率
+        HB_Voltage                               voltage       = {}; ///< 发射电压
+        uint32_t                                 channelFlag   = {}; ///< 通道标志
+        int                                      scanIncrement = {}; ///< 扫查增量
+        int                                      ledStatus     = {}; ///< LED状态
+        int                                      damperFlag    = {}; ///< 阻尼标志
+        int                                      encoderPulse  = {}; ///< 编码器脉冲
+        std::array<float, CHANNEL_NUMBER>        zeroBias      = {}; ///< 零点偏移
+        std::array<float, CHANNEL_NUMBER>        pulseWidth    = {}; ///< 脉冲宽度
+        std::array<float, CHANNEL_NUMBER>        delay         = {}; ///< 延时
+        std::array<float, CHANNEL_NUMBER>        sampleDepth   = {}; ///< 采样深度
+        std::array<int, CHANNEL_NUMBER>          sampleFactor  = {}; ///< 采样因子
+        std::array<float, CHANNEL_NUMBER>        gain          = {}; ///< 增益
+        std::array<HB_Filter, CHANNEL_NUMBER>    filter        = {}; ///< 滤波
+        std::array<HB_Demodu, CHANNEL_NUMBER>    demodu        = {}; ///< 检波方式
+        std::array<int, CHANNEL_NUMBER>          phaseReverse  = {}; ///< 相位翻转
+        std::array<HB_GateInfo, CHANNEL_NUMBER>  gateInfo      = {}; ///< 波门信息
+        std::array<HB_GateInfo, CHANNEL_NUMBER>  gate2Info     = {}; ///< 波门2信息
+        std::array<HB_Gate2Type, CHANNEL_NUMBER> gate2Type     = {}; ///< 波门2类型
     };
 #pragma pack()
 
@@ -121,7 +122,7 @@ public:
         return mCache.voltage;
     }
 
-    virtual bool       setChannelFlag(uint32_t flag) = 0;
+    virtual bool           setChannelFlag(uint32_t flag) = 0;
     virtual const uint32_t getChannelFlag() const final {
         return mCache.channelFlag;
     }
@@ -151,50 +152,50 @@ public:
         return mCache.zeroBias[channel];
     }
 
-    virtual bool                setPulseWidth(int channel, float pulseWidth) = 0;
-    virtual const vector<float> getPulseWidth() const final {
-        return vector<float>(mCache.pulseWidth, mCache.pulseWidth + CHANNEL_NUMBER);
+    virtual bool                                    setPulseWidth(int channel, float pulseWidth) = 0;
+    virtual const std::array<float, CHANNEL_NUMBER> getPulseWidth() const final {
+        return mCache.pulseWidth;
     }
 
-    virtual bool                setDelay(int channel, float delay_us) = 0;
-    virtual const vector<float> getDelay() const final {
-        return vector<float>(mCache.delay, mCache.delay + CHANNEL_NUMBER);
+    virtual bool                                    setDelay(int channel, float delay_us) = 0;
+    virtual const std::array<float, CHANNEL_NUMBER> getDelay() const final {
+        return mCache.delay;
     }
-    virtual bool                setSampleDepth(int channel, float sampleDepth) = 0;
-    virtual const vector<float> getSampleDepth() const final {
-        return vector<float>(mCache.sampleDepth, mCache.sampleDepth + CHANNEL_NUMBER);
+    virtual bool                                    setSampleDepth(int channel, float sampleDepth) = 0;
+    virtual const std::array<float, CHANNEL_NUMBER> getSampleDepth() const final {
+        return mCache.sampleDepth;
     }
-    virtual bool              setSampleFactor(int channel, int sampleFactor) = 0;
-    virtual const vector<int> getSampleFactor() const final {
-        return vector<int>(mCache.sampleFactor, mCache.sampleFactor + CHANNEL_NUMBER);
+    virtual bool                                  setSampleFactor(int channel, int sampleFactor) = 0;
+    virtual const std::array<int, CHANNEL_NUMBER> getSampleFactor() const final {
+        return mCache.sampleFactor;
     }
-    virtual bool                setGain(int channel, float gain) = 0;
-    virtual const vector<float> getGain() const final {
-        return vector<float>(mCache.gain, mCache.gain + CHANNEL_NUMBER);
+    virtual bool                                    setGain(int channel, float gain) = 0;
+    virtual const std::array<float, CHANNEL_NUMBER> getGain() const final {
+        return mCache.gain;
     }
-    virtual bool                    setFilter(int channel, HB_Filter filter) = 0;
-    virtual const vector<HB_Filter> getFilter() const final {
-        return vector<HB_Filter>(mCache.filter, mCache.filter + CHANNEL_NUMBER);
+    virtual bool                                  setFilter(int channel, HB_Filter filter) = 0;
+    virtual std::array<HB_Filter, CHANNEL_NUMBER> getFilter() const final {
+        return mCache.filter;
     }
-    virtual bool                    setDemodu(int channel, HB_Demodu demodu) = 0;
-    virtual const vector<HB_Demodu> getDemodu() const final {
-        return vector<HB_Demodu>(mCache.demodu, mCache.demodu + CHANNEL_NUMBER);
+    virtual bool                                        setDemodu(int channel, HB_Demodu demodu) = 0;
+    virtual const std::array<HB_Demodu, CHANNEL_NUMBER> getDemodu() const final {
+        return mCache.demodu;
     }
-    virtual bool              setPhaseReverse(int channel, int reverse) = 0;
-    virtual const vector<int> getPhaseReverse() const final {
-        return vector<int>(mCache.phaseReverse, mCache.phaseReverse + CHANNEL_NUMBER);
+    virtual bool                            setPhaseReverse(int channel, int reverse) = 0;
+    virtual std::array<int, CHANNEL_NUMBER> getPhaseReverse() const final {
+        return mCache.phaseReverse;
     }
-    virtual bool                      setGateInfo(int channel, const HB_GateInfo &info) = 0;
-    virtual const vector<HB_GateInfo> getGateInfo(int index) const final {
+    virtual bool                                          setGateInfo(int channel, const HB_GateInfo &info) = 0;
+    virtual const std::array<HB_GateInfo, CHANNEL_NUMBER> getGateInfo(int index) const final {
         if (index == 0) {
-            return vector<HB_GateInfo>(mCache.gateInfo, mCache.gateInfo + CHANNEL_NUMBER);
+            return mCache.gateInfo;
         } else {
-            return vector<HB_GateInfo>(mCache.gate2Info, mCache.gate2Info + CHANNEL_NUMBER);
+            return mCache.gate2Info;
         }
     }
-    virtual bool                       setGate2Type(int channel, HB_Gate2Type type) = 0;
-    virtual const vector<HB_Gate2Type> getGate2Type() const final {
-        return vector<HB_Gate2Type>(mCache.gate2Type, mCache.gate2Type + CHANNEL_NUMBER);
+    virtual bool                                           setGate2Type(int channel, HB_Gate2Type type) = 0;
+    virtual const std::array<HB_Gate2Type, CHANNEL_NUMBER> getGate2Type() const final {
+        return mCache.gate2Type;
     }
     virtual bool resetCoder(int coder) = 0;
     virtual bool flushSetting()        = 0;

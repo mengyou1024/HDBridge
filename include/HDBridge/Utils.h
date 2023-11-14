@@ -13,7 +13,7 @@
 #ifdef USE_SQLITE_ORM
     #include <sqlite_orm/sqlite_orm.h>
 struct HD_ScanORM {
-    shared_ptr<HDBridge::NM_DATA> mScanData[HDBridge::CHANNEL_NUMBER] = {};
+    std::array<shared_ptr<HDBridge::NM_DATA>, HDBridge::CHANNEL_NUMBER> mScanData = {};
 };
 namespace sqlite_orm {
     template <>
