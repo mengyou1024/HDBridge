@@ -47,11 +47,7 @@ public:
 
     TOFDUSBPort() = default;
 
-    virtual ~TOFDUSBPort() {
-        if (isOpen()) {
-            close();
-        }
-    }
+    virtual ~TOFDUSBPort() = default;
 
     virtual bool open() override;
     virtual bool isOpen() override;

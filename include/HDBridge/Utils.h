@@ -97,7 +97,8 @@ public:
 
     explicit HD_Utils(const HD_Utils& other)
         : HD_Utils() {
-        *this = other;
+        id       = other.id;
+        mScanOrm = other.mScanOrm;
     }
 
     HD_Utils& operator=(const HD_Utils& other) {
