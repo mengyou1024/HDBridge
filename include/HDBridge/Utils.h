@@ -149,15 +149,24 @@ public:
      */
     void popCallback();
 
+    /**
+     * @brief 自动增益
+     * @param channel 通道号
+     * @param gateIndex 波门索引
+     * @param goal 目标值
+     * @param gainStep 增益步进
+    */
+    void autoGain(int channel, int gateIndex, float goal= 0.8f, float gainStep=0.1f);
+
 #ifdef USE_SQLITE_ORM
 
     #ifndef ORM_DB_NAME
     static constexpr std::string_view ORM_DB_NAME = "HD_Utils.db";
     #endif // !ORM_DB_NAME
 
-    static auto storage() {
+    static auto storage(std::string dbName) {
         using namespace sqlite_orm;
-        return make_storage(std::string(ORM_DB_NAME),
+        return make_storage(dbName,
                             make_table("HD_Utils",
                                        make_column("ID", &HD_Utils::id, primary_key()),
                                        make_column("Data", &HD_Utils::mScanOrm)));

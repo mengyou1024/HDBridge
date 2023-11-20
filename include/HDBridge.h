@@ -1,9 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <array>
 
 using std::make_shared;
 using std::make_unique;
@@ -49,14 +49,14 @@ public:
 
     struct NM_DATA {
 #pragma pack(1)
-        int32_t  iChannel    = {}; ///< 通道号
-        int32_t  iPackage    = {}; ///< 包序列
-        int32_t  iAScanSize  = {}; ///< A扫长度
-        int32_t  pCoder[2]   = {}; ///< 编码器值
-        int32_t  pGatePos[2] = {}; ///< 波门位置
-        int32_t  pAlarm[2]   = {}; ///< 波门报警
-        uint8_t  pGateAmp[2] = {}; ///< 波门波幅
-        uint16_t reserved    = {}; ///< 保留
+        int32_t                iChannel     = {}; ///< 通道号
+        int32_t                iPackage     = {}; ///< 包序列
+        int32_t                iAScanSize   = {}; ///< A扫长度
+        std::array<int32_t, 2> pCoder       = {}; ///< 编码器值
+        std::array<int32_t, 2> pGatePos     = {}; ///< 波门位置
+        std::array<int32_t, 2> pAlarm       = {}; ///< 波门报警
+        std::array<uint8_t, 2> pGateAmp     = {}; ///< 波门波幅
+        uint16_t               reserved     = {}; ///< 保留
 #pragma pack()
         vector<uint8_t> pAscan = {}; // A扫数据
     };
@@ -148,6 +148,9 @@ public:
     }
 
     virtual bool        setZeroBias(int channel, float zero_us) = 0;
+    virtual std::array<float, CHANNEL_NUMBER> getZeroBias() const final {
+        return mCache.zeroBias;
+    }
     virtual const float getZeroBias(int channel) const final {
         return mCache.zeroBias[channel];
     }
@@ -156,34 +159,58 @@ public:
     virtual const std::array<float, CHANNEL_NUMBER> getPulseWidth() const final {
         return mCache.pulseWidth;
     }
+    virtual const float getPulseWidt(int channel) const final {
+        return mCache.pulseWidth[channel];
+    }
 
     virtual bool                                    setDelay(int channel, float delay_us) = 0;
     virtual const std::array<float, CHANNEL_NUMBER> getDelay() const final {
         return mCache.delay;
     }
+    virtual const float getDelay(int channel) const final {
+        return mCache.delay[channel];
+    }
     virtual bool                                    setSampleDepth(int channel, float sampleDepth) = 0;
     virtual const std::array<float, CHANNEL_NUMBER> getSampleDepth() const final {
         return mCache.sampleDepth;
+    }
+    virtual const float getSampleDepth(int channel) const final {
+        return mCache.sampleDepth[channel];
     }
     virtual bool                                  setSampleFactor(int channel, int sampleFactor) = 0;
     virtual const std::array<int, CHANNEL_NUMBER> getSampleFactor() const final {
         return mCache.sampleFactor;
     }
+    virtual const int getSampleFactor(int channel) const final {
+        return mCache.sampleFactor[channel];
+    }
     virtual bool                                    setGain(int channel, float gain) = 0;
     virtual const std::array<float, CHANNEL_NUMBER> getGain() const final {
         return mCache.gain;
+    }
+    virtual const float getGain(int channel) const final {
+        return mCache.gain[channel];
     }
     virtual bool                                  setFilter(int channel, HB_Filter filter) = 0;
     virtual std::array<HB_Filter, CHANNEL_NUMBER> getFilter() const final {
         return mCache.filter;
     }
+    virtual const HB_Filter getFilter(int channel) const final {
+        return mCache.filter[channel];
+    }
     virtual bool                                        setDemodu(int channel, HB_Demodu demodu) = 0;
     virtual const std::array<HB_Demodu, CHANNEL_NUMBER> getDemodu() const final {
         return mCache.demodu;
     }
+    virtual const HB_Demodu getDemodu(int channel) const final {
+        return mCache.demodu[channel];
+    }
     virtual bool                            setPhaseReverse(int channel, int reverse) = 0;
     virtual std::array<int, CHANNEL_NUMBER> getPhaseReverse() const final {
         return mCache.phaseReverse;
+    }
+    virtual const int getPhaseReverse(int channel) const final {
+        return mCache.phaseReverse[channel];
     }
     virtual bool                                          setGateInfo(int channel, const HB_GateInfo &info) = 0;
     virtual const std::array<HB_GateInfo, CHANNEL_NUMBER> getGateInfo(int index) const final {
@@ -193,9 +220,19 @@ public:
             return mCache.gate2Info;
         }
     }
+    virtual const HB_GateInfo getGateInfo(int index, int channel) const final {
+        if (index == 0) {
+            return mCache.gateInfo[channel];
+        } else {
+            return mCache.gate2Info[channel];
+        }
+    }
     virtual bool                                           setGate2Type(int channel, HB_Gate2Type type) = 0;
     virtual const std::array<HB_Gate2Type, CHANNEL_NUMBER> getGate2Type() const final {
         return mCache.gate2Type;
+    }
+    virtual const HB_Gate2Type getGate2Type(int channel) const final {
+        return mCache.gate2Type[channel];
     }
     virtual bool resetCoder(int coder) = 0;
     virtual bool flushSetting()        = 0;

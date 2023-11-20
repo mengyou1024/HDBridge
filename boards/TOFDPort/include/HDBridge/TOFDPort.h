@@ -105,6 +105,7 @@ public:
                             make_table("TOFDUSBPort",
                                        make_column("ID", &TOFDUSBPort::id, primary_key()),
                                        make_column("NAME", &TOFDUSBPort::name, unique()),
+                                       make_column("VALID", &TOFDUSBPort::isValid),
                                        make_column("CACHE", &TOFDUSBPort::mCache)));
     }
 

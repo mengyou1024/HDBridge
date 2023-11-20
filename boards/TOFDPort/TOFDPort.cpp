@@ -55,16 +55,16 @@ bool TOFDUSBPort::setFrequency(int freq) {
     if (freq > 10000) {
         freq = 10000;
     }
+    this->mCache.frequency = freq;
     if (TOFD_PORT_SetFrequency(freq)) {
-        this->mCache.frequency = freq;
         return true;
     }
     return false;
 }
 
 bool TOFDUSBPort::setVoltage(HB_Voltage voltage) {
+    this->mCache.voltage = voltage;
     if (TOFD_PORT_SetVoltage(static_cast<int>(voltage))) {
-        this->mCache.voltage = voltage;
         return true;
     }
     return false;
@@ -74,40 +74,40 @@ bool TOFDUSBPort::setChannelFlag(uint32_t flag) {
     if (flag == 0) {
         flag = 0xFFF0FFF;
     }
+    this->mCache.channelFlag = flag;
     if (TOFD_PORT_SetChannelFlag(static_cast<int>(flag))) {
-        this->mCache.channelFlag = flag;
         return true;
     }
     return false;
 }
 
 bool TOFDUSBPort::setScanIncrement(int scanIncrement) {
+    this->mCache.scanIncrement = scanIncrement;
     if (TOFD_PORT_SetScanIncrement(scanIncrement)) {
-        this->mCache.scanIncrement = scanIncrement;
         return true;
     }
     return false;
 }
 
 bool TOFDUSBPort::setLED(int ledStatus) {
+    this->mCache.ledStatus = ledStatus;
     if (TOFD_PORT_SetLED(ledStatus)) {
-        this->mCache.ledStatus = ledStatus;
         return true;
     }
     return false;
 }
 
 bool TOFDUSBPort::setDamperFlag(int damperFlag) {
+    this->mCache.damperFlag = damperFlag;
     if (TOFD_PORT_SetDamperFlag(damperFlag)) {
-        this->mCache.damperFlag = damperFlag;
         return true;
     }
     return false;
 }
 
 bool TOFDUSBPort::setEncoderPulse(int encoderPulse) {
+    this->mCache.encoderPulse = encoderPulse;
     if (TOFD_PORT_SetEncoderPulse(encoderPulse)) {
-        this->mCache.encoderPulse = encoderPulse;
         return true;
     }
     return false;
@@ -117,8 +117,8 @@ bool TOFDUSBPort::setZeroBias(int channel, float zero_us) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    mCache.zeroBias[channel] = zero_us;
     if (TOFD_PORT_SetDelay(channel, zero_us + mCache.delay[channel])) {
-        mCache.zeroBias[channel] = zero_us;
         return true;
     }
     return false;
@@ -131,8 +131,8 @@ bool TOFDUSBPort::setPulseWidth(int channel, float pulseWidth) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.pulseWidth[channel] = pulseWidth;
     if (TOFD_PORT_SetPulseWidth(channel, pulseWidth)) {
-        this->mCache.pulseWidth[channel] = pulseWidth;
         return true;
     }
     return false;
@@ -142,8 +142,8 @@ bool TOFDUSBPort::setDelay(int channel, float delay_us) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.delay[channel] = delay_us;
     if (TOFD_PORT_SetDelay(channel, delay_us + mCache.zeroBias[channel])) {
-        this->mCache.delay[channel] = delay_us;
         return true;
     }
     return false;
@@ -152,12 +152,14 @@ bool TOFDUSBPort::setDelay(int channel, float delay_us) {
 bool TOFDUSBPort::setSampleFactor(int channel, int sampleFactor) {
     if (sampleFactor < 1) {
         sampleFactor = 1;
+    } else if (sampleFactor > 255) {
+        sampleFactor = 255;
     }
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.sampleFactor[channel] = sampleFactor;
     if (TOFD_PORT_SetSampleFactor(channel, sampleFactor)) {
-        this->mCache.sampleFactor[channel] = sampleFactor;
         return true;
     }
     return false;
@@ -167,8 +169,8 @@ bool TOFDUSBPort::setSampleDepth(int channel, float sampleDepth) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.sampleDepth[channel] = sampleDepth;
     if (TOFD_PORT_SetSampleDepth(channel, sampleDepth + mCache.zeroBias[channel])) {
-        this->mCache.sampleDepth[channel] = sampleDepth;
         return true;
     }
     return false;
@@ -178,8 +180,8 @@ bool TOFDUSBPort::setGain(int channel, float gain) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.gain[channel] = gain;
     if (TOFD_PORT_SetGain(channel, gain)) {
-        this->mCache.gain[channel] = gain;
         return true;
     }
     return false;
@@ -189,8 +191,8 @@ bool TOFDUSBPort::setFilter(int channel, HB_Filter filter) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.filter[channel] = filter;
     if (TOFD_PORT_SetFilter(channel, static_cast<int>(filter))) {
-        this->mCache.filter[channel] = filter;
         return true;
     }
     return false;
@@ -200,8 +202,8 @@ bool TOFDUSBPort::setDemodu(int channel, HB_Demodu demodu) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.demodu[channel] = demodu;
     if (TOFD_PORT_SetDemodu(channel, static_cast<int>(demodu))) {
-        this->mCache.demodu[channel] = demodu;
         return true;
     }
     return false;
@@ -211,8 +213,8 @@ bool TOFDUSBPort::setPhaseReverse(int channel, int reverse) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.phaseReverse[channel] = reverse;
     if (TOFD_PORT_SetPhaseReverse(channel, reverse)) {
-        this->mCache.phaseReverse[channel] = reverse;
         return true;
     }
     return false;
@@ -222,12 +224,13 @@ bool TOFDUSBPort::setGateInfo(int channel, const HB_GateInfo &info) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    if (info.gate == 0) {
+        this->mCache.gateInfo[channel] = info;
+    } else {
+        this->mCache.gate2Info[channel] = info;
+    }
     if (TOFD_PORT_SetGateInfo(channel, info.gate, info.active, info.alarmType, info.pos, info.width, info.height)) {
-        if (info.gate == 0) {
-            this->mCache.gateInfo[channel] = info;
-        } else {
-            this->mCache.gate2Info[channel] = info;
-        }
+
         return true;
     }
     return false;
@@ -237,8 +240,8 @@ bool TOFDUSBPort::setGate2Type(int channel, HB_Gate2Type type) {
     if (channel >= CHANNEL_NUMBER) {
         return false;
     }
+    this->mCache.gate2Type[channel] = type;
     if (TOFD_PORT_SetGate2Type(channel, static_cast<int>(type))) {
-        this->mCache.gate2Type[channel] = type;
         return true;
     }
     return false;
@@ -264,10 +267,10 @@ unique_ptr<HDBridge::NM_DATA> TOFDUSBPort::readDatas() {
     ret->iAScanSize = data->iAScanSize;
     ret->pAscan.resize(data->iAScanSize);
     memcpy(ret->pAscan.data(), data->pAscan, ret->iAScanSize);
-    memcpy(ret->pCoder, data->pCoder, sizeof(int32_t) * 2);
-    memcpy(ret->pGatePos, data->pGatePos, sizeof(int32_t) * 2);
-    memcpy(ret->pGateAmp, data->pGateAmp, sizeof(uint8_t) * 2);
-    memcpy(ret->pAlarm, data->pAlarm, sizeof(int32_t) * 2);
+    memcpy(ret->pCoder.data(), data->pCoder, sizeof(int32_t) * 2);
+    memcpy(ret->pGatePos.data(), data->pGatePos, sizeof(int32_t) * 2);
+    memcpy(ret->pGateAmp.data(), data->pGateAmp, sizeof(uint8_t) * 2);
+    memcpy(ret->pAlarm.data(), data->pAlarm, sizeof(int32_t) * 2);
 
     freeRawDatas(data);
     return ret;
