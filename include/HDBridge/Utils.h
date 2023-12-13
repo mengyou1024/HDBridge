@@ -9,6 +9,7 @@
 #include <stack>
 #include <thread>
 #include <type_traits>
+#include <map>
 
 #ifdef USE_SQLITE_ORM
     #include <sqlite_orm/sqlite_orm.h>
@@ -88,7 +89,7 @@ public:
     [[deprecated("use `HD_Utils(std::unique_ptr<HDBridge> bridge)` insetead")]] explicit HD_Utils(HDBridge* bridge)
         : HD_Utils(std::unique_ptr<HDBridge>(bridge)) {}
 
-    explicit HD_Utils(std::unique_ptr<HDBridge> bridge)
+    explicit HD_Utils(std::unique_ptr<HDBridge>&& bridge)
         : mBridge(std::move(bridge)) {
         if (mBridge) {
             mBridge->open();
@@ -135,28 +136,44 @@ public:
     void stop();
     void waitExit();
 
-    void addReadCallback(const std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)> callback);
-    void removeReadCallback();
+    void addReadCallback(const std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)> callback, std::string name = {});
+    void removeReadCallback(std::string name = {});
 
     /**
-     * @brief ½«»Øµ÷º¯ÊıÁĞ±íÑ¹ÈëÕ»,
-     * @note ´Ë²Ù×÷ÔÚÑ¹ÈëÕ»ºó, »áµ÷ÓÃ`removeReadCallback`É¾³ıËùÓĞµÄ»Øµ÷º¯Êı
+     * @brief åŒ…è£…å›è°ƒå‡½æ•°
+     * @param func ç±»æ–¹æ³•
+     * @param th ç±»æŒ‡é’ˆ
+     * @param ...args é™¤äº†`const HDBridge::NM_DATA& data, const HD_Utils& caller`ä»¥å¤–çš„å‚æ•°
+     * @return å¯è°ƒç”¨å¯¹è±¡
+    */
+    template <class Fn,class Th, class... Args>
+    static auto WrapReadCallback(Fn func, Th th, Args... args) {
+        return [=](const HDBridge::NM_DATA& data, const HD_Utils& caller) {
+            auto callable = std::bind(func, th, std::placeholders::_1, std::placeholders::_2, args...);
+            callable(data, caller);
+        };
+    }
+
+
+    /**
+     * @brief å°†å›è°ƒå‡½æ•°åˆ—è¡¨å‹å…¥æ ˆ,
+     * @note æ­¤æ“ä½œåœ¨å‹å…¥æ ˆå, ä¼šè°ƒç”¨`removeReadCallback`åˆ é™¤æ‰€æœ‰çš„å›è°ƒå‡½æ•°
      */
     void pushCallback();
 
     /**
-     * @brief ´ÓÕ»ÖĞ»Ö¸´»Øµ÷º¯ÊıÁĞ±í
+     * @brief ä»æ ˆä¸­æ¢å¤å›è°ƒå‡½æ•°åˆ—è¡¨
      */
     void popCallback();
 
     /**
-     * @brief ×Ô¶¯ÔöÒæ
-     * @param channel Í¨µÀºÅ
-     * @param gateIndex ²¨ÃÅË÷Òı
-     * @param goal Ä¿±êÖµ
-     * @param gainStep ÔöÒæ²½½ø
-    */
-    void autoGain(int channel, int gateIndex, float goal= 0.8f, float gainStep=0.1f);
+     * @brief è‡ªåŠ¨å¢ç›Š
+     * @param channel é€šé“å·
+     * @param gateIndex æ³¢é—¨ç´¢å¼•
+     * @param goal ç›®æ ‡å€¼
+     * @param gainStep å¢ç›Šæ­¥è¿›
+     */
+    void autoGain(int channel, int gateIndex, float goal = 0.8f, float gainStep = 0.1f);
 
 #ifdef USE_SQLITE_ORM
 
@@ -169,14 +186,18 @@ public:
         return make_storage(dbName,
                             make_table("HD_Utils",
                                        make_column("ID", &HD_Utils::id, primary_key()),
-                                       make_column("Data", &HD_Utils::mScanOrm)));
+                                       make_column("DATA", &HD_Utils::mScanOrm)));
+    }
+
+    static auto storage() {
+        return storage(std::string(ORM_DB_NAME));
     }
 
 #endif
 
 private:
     using HDUtilsCallback       = std::function<void(const HDBridge::NM_DATA&, const HD_Utils&)>;
-    using HDUtilsCallbackVector = std::vector<HDUtilsCallback>;
+    using HDUtilsCallbackVector = std::map<std::string, HDUtilsCallback>;
     using HDUtilsCallbackStack  = std::stack<HDUtilsCallbackVector>;
 
     std::mutex                mScanDataMutex     = {};

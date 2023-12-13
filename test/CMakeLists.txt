@@ -13,5 +13,5 @@ add_subdirectory(sqlite3_orm)
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
-target_link_libraries(${PROJECT_NAME} HDBridge::TOFDPort HDBridge::Utils ORM::SQLite3)
+target_link_libraries(${PROJECT_NAME} HDBridge::TOFDPort HDBridge::NetworkMulti HDBridge::Utils ORM::SQLite3)
 add_definitions(-DUSE_SQLITE_ORM)
